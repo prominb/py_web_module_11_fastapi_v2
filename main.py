@@ -1,4 +1,7 @@
-from fastapi import FastAPI, Path, Query, Depends, HTTPException, status
+import time
+import pathlib
+
+from fastapi import FastAPI, Path, Query, Depends, HTTPException, status, Request, File, UploadFile
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -19,6 +22,14 @@ class ResponseNoteModel(BaseModel):
     description: str
     done: bool
 
+
+@app.middleware("http")
+async def add_process_time_header(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = time.time() - start_time
+    response.headers["X-Process-Time"] = str(process_time)
+    return response
 
 @app.get("/api/healthchecker")
 # def root():
@@ -81,3 +92,12 @@ async def create_note(note: NoteModel, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_note)
     return new_note
+
+
+@app.post("/uploadfile/")
+async def create_upload_file(file: UploadFile = File()):
+    pathlib.Path("uploads").mkdir(exist_ok=True)
+    file_path = f"uploads/{file.filename}"
+    with open(file_path, "wb") as f:
+        f.write(await file.read())
+    return {"file_path": file_path}
