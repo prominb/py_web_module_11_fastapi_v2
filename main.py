@@ -2,6 +2,7 @@ import time
 import pathlib
 
 from fastapi import FastAPI, Path, Query, Depends, HTTPException, status, Request, File, UploadFile
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -9,6 +10,8 @@ from sqlalchemy.orm import Session
 from db import get_db, Note
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 # class Note(BaseModel):
